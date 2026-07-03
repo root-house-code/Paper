@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Paper</string>
+    <string name="notification_channel_name">Journal reminders</string>
+    <string name="notification_title">Time to write</string>
+    <string name="notification_body">Take a moment. Your paper is waiting.</string>
+    <string name="notification_action_write">Write</string>
+    <string name="notification_action_later">Later</string>
+</resources>
