@@ -13,7 +13,8 @@ enum class ScheduleMode {
     DAILY_RANDOM,         // every day at a random time within bounds
     WEEKLY_FIXED,         // set day, set time
     WEEKLY_FIXED_DAY_RANDOM_TIME, // set day, random time within bounds
-    WEEKLY_RANDOM         // random day, random time within bounds
+    WEEKLY_RANDOM,        // random day, random time within bounds
+    CUSTOM                // a chosen time for each selected day of the week
 }
 
 data class ScheduleConfig(
@@ -24,7 +25,9 @@ data class ScheduleConfig(
     val windowStartMinute: Int = 9 * 60,
     val windowEndMinute: Int = 21 * 60,
     /** ISO day of week 1 (Mon) .. 7 (Sun). Used by WEEKLY_FIXED* modes. */
-    val dayOfWeek: Int = DayOfWeek.SUNDAY.value
+    val dayOfWeek: Int = DayOfWeek.SUNDAY.value,
+    /** ISO day of week -> minute of day. Only enabled days are present. Used by CUSTOM. */
+    val customDayMinutes: Map<Int, Int> = emptyMap()
 ) {
 
     /**
@@ -66,6 +69,17 @@ data class ScheduleConfig(
                 } while (!candidate.isAfter(after))
                 candidate
             }
+
+            ScheduleMode.CUSTOM ->
+                // Soonest occurrence across every enabled day's own time. The UI
+                // requires at least one entry before a CUSTOM schedule can be saved.
+                customDayMinutes.entries
+                    .map { (day, minute) ->
+                        nextWeekly(after, DayOfWeek.of(day)) {
+                            LocalTime.ofSecondOfDay(minute * 60L)
+                        }
+                    }
+                    .minOrNull() ?: after.plusYears(100)
         }
     }
 
@@ -124,18 +138,32 @@ object ScheduleStore {
             .putInt("windowStartMinute", config.windowStartMinute)
             .putInt("windowEndMinute", config.windowEndMinute)
             .putInt("dayOfWeek", config.dayOfWeek)
+            .putStringSet(
+                "customDayMinutes",
+                config.customDayMinutes.map { (day, minute) -> "$day:$minute" }.toSet()
+            )
             .apply()
     }
 
     fun load(context: Context): ScheduleConfig? {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val mode = prefs.getString("mode", null) ?: return null
+        val customDayMinutes = prefs.getStringSet("customDayMinutes", emptySet())
+            .orEmpty()
+            .mapNotNull { entry ->
+                val parts = entry.split(":")
+                val day = parts.getOrNull(0)?.toIntOrNull()
+                val minute = parts.getOrNull(1)?.toIntOrNull()
+                if (day != null && minute != null) day to minute else null
+            }
+            .toMap()
         return ScheduleConfig(
             mode = ScheduleMode.valueOf(mode),
             fixedMinuteOfDay = prefs.getInt("fixedMinuteOfDay", 9 * 60),
             windowStartMinute = prefs.getInt("windowStartMinute", 9 * 60),
             windowEndMinute = prefs.getInt("windowEndMinute", 21 * 60),
-            dayOfWeek = prefs.getInt("dayOfWeek", DayOfWeek.SUNDAY.value)
+            dayOfWeek = prefs.getInt("dayOfWeek", DayOfWeek.SUNDAY.value),
+            customDayMinutes = customDayMinutes
         )
     }
 }

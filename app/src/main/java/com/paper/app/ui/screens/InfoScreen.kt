@@ -43,7 +43,7 @@ fun InfoScreen(onClose: () -> Unit) {
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                "A quiet knock comes\nthe ink finds a waiting page\nsafe here, yours alone",
+                "A quiet knock",
                 style = MaterialTheme.typography.headlineMedium.copy(
                     fontStyle = FontStyle.Italic,
                     fontSize = 24.sp,
