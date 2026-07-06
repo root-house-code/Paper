@@ -1,0 +1,14 @@
+# XcodeGen output — the project is generated from project.yml, never committed.
+Generated/
+Paper.xcodeproj/
+
+# Xcode / build artifacts
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+*.ipa
+*.dSYM.zip
+
+# macOS
+.DS_Store

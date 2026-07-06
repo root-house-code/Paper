@@ -1,0 +1,58 @@
+name: Paper
+
+options:
+  bundleIdPrefix: com.paper
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    TARGETED_DEVICE_FAMILY: "1"        # iPhone only
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+
+targets:
+  Paper:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+    info:
+      # XcodeGen generates the Info.plist from these properties (kept out of git).
+      path: Generated/Info.plist
+      properties:
+        CFBundleDisplayName: Paper
+        UILaunchScreen: {}
+        NSFaceIDUsageDescription: "Unlock your journal with Face ID."
+        UIBackgroundModes: [fetch]
+        BGTaskSchedulerPermittedIdentifiers: [com.paper.app.replenish]
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.paper.app
+        GENERATE_INFOPLIST_FILE: NO
+
+  PaperTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: Paper
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.paper.app.tests
+        GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  Paper:
+    build:
+      targets:
+        Paper: all
+        PaperTests: [test]
+    test:
+      targets:
+        - PaperTests

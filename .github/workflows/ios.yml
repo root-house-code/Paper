@@ -1,0 +1,40 @@
+name: iOS
+
+on:
+  push:
+    paths:
+      - 'PaperiOS/**'
+      - '.github/workflows/ios.yml'
+  pull_request:
+    paths:
+      - 'PaperiOS/**'
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    name: Build & unit test
+    runs-on: macos-14
+    defaults:
+      run:
+        working-directory: PaperiOS
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      # Unit tests run on the CI runner's iOS Simulator. The app is never run on a
+      # Mac interactively — this is only the headless compile + pure-logic test pass.
+      # NOTE: the simulator device name may need to track the runner image; adjust
+      # `name=` if the first CI run reports the destination is unavailable.
+      - name: Build & test
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project Paper.xcodeproj \
+            -scheme Paper \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+            CODE_SIGNING_ALLOWED=NO
