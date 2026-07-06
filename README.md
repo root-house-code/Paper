@@ -21,9 +21,9 @@ A minimalist Android journaling app built on two ideas:
 ## Project layout
 
 - [MainActivity.kt](app/src/main/java/com/paper/app/MainActivity.kt) — navigation and the unlock gate
-- [data/](app/src/main/java/com/paper/app/data/) — password hashing, schedule model + next-trigger math, journal file repository
+- [data/](app/src/main/java/com/paper/app/data/) — password hashing, schedule model + next-trigger math, prompt categories, journal file repository
 - [notifications/](app/src/main/java/com/paper/app/notifications/) — AlarmManager scheduling, reminder/snooze/boot receivers
-- [ui/screens/](app/src/main/java/com/paper/app/ui/screens/) — setup, unlock, schedule, journal, editor screens
+- [ui/screens/](app/src/main/java/com/paper/app/ui/screens/) — setup, unlock, schedule, journal, editor, prompts screens
 - [ui/editor/Markdown.kt](app/src/main/java/com/paper/app/ui/editor/Markdown.kt) — Slack-flavored markup styling for the editor and read views
 
 ## Building
@@ -42,3 +42,13 @@ Today the journal is protected by app sandboxing plus the in-app password gate, 
 - Optional: wrap the derived key with an Android Keystore key so biometric unlock can coexist with the password without weakening it.
 
 This makes the journal unreadable even with direct local file access unless the password is entered — no password, no plaintext, including for us.
+
+## Prompt categories
+
+Alongside the default reminder ("Take a moment"), Paper offers five opt-in prompt categories — Goals, Dreams, Personal growth, Work, and Relationships — managed from the prompts icon on the journal screen. Each category:
+
+- Is opted into independently — none, some, or all can be active at once.
+- Keeps its own notification schedule (the same five modes above), fully independent of the default and of every other category.
+- Draws a random prompt from its own pool of ten each time it fires, so the wording varies instead of repeating.
+
+Under the hood this reuses the existing schedule model (`ScheduleConfig`/`ScheduleStore`) keyed per category, and gives each category its own alarm, notification, and snooze action so several armed at once can't collide.

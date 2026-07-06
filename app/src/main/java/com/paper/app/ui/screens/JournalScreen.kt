@@ -13,9 +13,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.Create
+import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.FloatingActionButton
@@ -49,8 +52,11 @@ fun JournalScreen(
     repository: JournalRepository,
     onWrite: () -> Unit,
     onEditSchedule: () -> Unit,
+    onOpenPrompts: () -> Unit,
     onChangePassword: () -> Unit,
-    onInfo: () -> Unit
+    onInfo: () -> Unit,
+    isDarkMode: Boolean,
+    onToggleDarkMode: () -> Unit
 ) {
     var entries by remember { mutableStateOf(repository.loadEntries().asReversed()) }
 
@@ -73,6 +79,13 @@ fun JournalScreen(
                     style = MaterialTheme.typography.headlineMedium,
                     modifier = Modifier.weight(1f)
                 )
+                IconButton(onClick = onToggleDarkMode) {
+                    Icon(
+                        if (isDarkMode) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
+                        contentDescription = if (isDarkMode) "Switch to light mode" else "Switch to dark mode",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 IconButton(onClick = onChangePassword) {
                     Icon(
                         Icons.Outlined.Lock,
@@ -84,6 +97,13 @@ fun JournalScreen(
                     Icon(
                         Icons.Outlined.Schedule,
                         contentDescription = "Edit schedule",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                IconButton(onClick = onOpenPrompts) {
+                    Icon(
+                        Icons.Outlined.Category,
+                        contentDescription = "Manage prompts",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }

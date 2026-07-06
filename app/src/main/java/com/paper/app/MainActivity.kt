@@ -7,21 +7,32 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.paper.app.data.JournalRepository
 import com.paper.app.data.PasswordManager
+import com.paper.app.data.PromptCategory
+import com.paper.app.data.PromptCategoryStore
 import com.paper.app.data.ScheduleStore
+import com.paper.app.data.ThemePreference
 import com.paper.app.notifications.ReminderScheduler
 import com.paper.app.ui.screens.ChangePasswordScreen
 import com.paper.app.ui.screens.EditorScreen
 import com.paper.app.ui.screens.InfoScreen
 import com.paper.app.ui.screens.JournalScreen
+import com.paper.app.ui.screens.PromptsScreen
 import com.paper.app.ui.screens.ScheduleScreen
 import com.paper.app.ui.screens.SetupPasswordScreen
 import com.paper.app.ui.screens.UnlockScreen
@@ -35,6 +46,8 @@ object Routes {
     const val EDITOR = "editor"
     const val CHANGE_PASSWORD = "change_password"
     const val INFO = "info"
+    const val PROMPTS = "prompts"
+    const val PROMPT_SCHEDULE = "prompt_schedule"
 }
 
 class MainActivity : ComponentActivity() {
@@ -53,7 +66,17 @@ class MainActivity : ComponentActivity() {
         val repository = JournalRepository(this)
 
         setContent {
-            PaperTheme {
+            val systemDarkTheme = isSystemInDarkTheme()
+            var isDarkMode by remember {
+                mutableStateOf(ThemePreference.load(this@MainActivity) ?: systemDarkTheme)
+            }
+            val onToggleDarkMode: () -> Unit = {
+                val newValue = !isDarkMode
+                isDarkMode = newValue
+                ThemePreference.save(this@MainActivity, newValue)
+            }
+
+            PaperTheme(darkTheme = isDarkMode) {
                 var unlocked by remember { mutableStateOf(false) }
                 var pendingEditor by remember {
                     mutableStateOf(intent?.getBooleanExtra(EXTRA_OPEN_EDITOR, false) == true)
@@ -65,6 +88,10 @@ class MainActivity : ComponentActivity() {
                     else -> Routes.UNLOCK
                 }
 
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
                 NavHost(navController = navController, startDestination = startDestination) {
 
                     composable(Routes.SETUP_PASSWORD) {
@@ -113,8 +140,11 @@ class MainActivity : ComponentActivity() {
                             repository = repository,
                             onWrite = { navController.navigate(Routes.EDITOR) },
                             onEditSchedule = { navController.navigate(Routes.SETUP_SCHEDULE) },
+                            onOpenPrompts = { navController.navigate(Routes.PROMPTS) },
                             onChangePassword = { navController.navigate(Routes.CHANGE_PASSWORD) },
-                            onInfo = { navController.navigate(Routes.INFO) }
+                            onInfo = { navController.navigate(Routes.INFO) },
+                            isDarkMode = isDarkMode,
+                            onToggleDarkMode = onToggleDarkMode
                         )
                     }
 
@@ -135,6 +165,42 @@ class MainActivity : ComponentActivity() {
                         InfoScreen(onClose = { navController.popBackStack() })
                     }
 
+                    composable(Routes.PROMPTS) {
+                        if (!unlocked) return@composable
+                        var enabledCategoryIds by remember {
+                            mutableStateOf(PromptCategoryStore.loadEnabled(this@MainActivity))
+                        }
+                        PromptsScreen(
+                            enabledCategoryIds = enabledCategoryIds,
+                            onToggle = { categoryId, enabled ->
+                                ReminderScheduler.setCategoryEnabled(this@MainActivity, categoryId, enabled)
+                                enabledCategoryIds = PromptCategoryStore.loadEnabled(this@MainActivity)
+                            },
+                            onEditSchedule = { categoryId ->
+                                navController.navigate("${Routes.PROMPT_SCHEDULE}/$categoryId")
+                            },
+                            onClose = { navController.popBackStack() }
+                        )
+                    }
+
+                    composable(
+                        route = "${Routes.PROMPT_SCHEDULE}/{categoryId}",
+                        arguments = listOf(navArgument("categoryId") { type = NavType.StringType })
+                    ) { backStackEntry ->
+                        if (!unlocked) return@composable
+                        val category = PromptCategory.byId(backStackEntry.arguments?.getString("categoryId"))
+                        if (category == null) return@composable
+                        ScheduleScreen(
+                            initial = ScheduleStore.load(this@MainActivity, category.id),
+                            categoryLabel = category.displayName,
+                            onSaved = { config ->
+                                ScheduleStore.save(this@MainActivity, config, category.id)
+                                ReminderScheduler.scheduleNext(this@MainActivity, category.id)
+                                navController.popBackStack()
+                            }
+                        )
+                    }
+
                     composable(Routes.EDITOR) {
                         if (!unlocked) return@composable
                         EditorScreen(
@@ -151,6 +217,7 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     }
+                }
                 }
             }
         }

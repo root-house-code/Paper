@@ -127,28 +127,33 @@ data class ScheduleConfig(
     }
 }
 
-/** Persists the schedule so BootReceiver and ReminderReceiver can re-arm alarms. */
+/** Persists schedules so BootReceiver and ReminderReceiver can re-arm alarms. Each prompt
+ *  category gets its own key alongside the default; DEFAULT_KEY reproduces the original
+ *  unprefixed keys so existing installs' saved schedule loads unchanged. */
 object ScheduleStore {
     private const val PREFS = "paper_schedule"
+    const val DEFAULT_KEY = ""
 
-    fun save(context: Context, config: ScheduleConfig) {
+    fun save(context: Context, config: ScheduleConfig, key: String = DEFAULT_KEY) {
+        val p = prefix(key)
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .putString("mode", config.mode.name)
-            .putInt("fixedMinuteOfDay", config.fixedMinuteOfDay)
-            .putInt("windowStartMinute", config.windowStartMinute)
-            .putInt("windowEndMinute", config.windowEndMinute)
-            .putInt("dayOfWeek", config.dayOfWeek)
+            .putString("${p}mode", config.mode.name)
+            .putInt("${p}fixedMinuteOfDay", config.fixedMinuteOfDay)
+            .putInt("${p}windowStartMinute", config.windowStartMinute)
+            .putInt("${p}windowEndMinute", config.windowEndMinute)
+            .putInt("${p}dayOfWeek", config.dayOfWeek)
             .putStringSet(
-                "customDayMinutes",
+                "${p}customDayMinutes",
                 config.customDayMinutes.map { (day, minute) -> "$day:$minute" }.toSet()
             )
             .apply()
     }
 
-    fun load(context: Context): ScheduleConfig? {
+    fun load(context: Context, key: String = DEFAULT_KEY): ScheduleConfig? {
+        val p = prefix(key)
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val mode = prefs.getString("mode", null) ?: return null
-        val customDayMinutes = prefs.getStringSet("customDayMinutes", emptySet())
+        val mode = prefs.getString("${p}mode", null) ?: return null
+        val customDayMinutes = prefs.getStringSet("${p}customDayMinutes", emptySet())
             .orEmpty()
             .mapNotNull { entry ->
                 val parts = entry.split(":")
@@ -159,11 +164,13 @@ object ScheduleStore {
             .toMap()
         return ScheduleConfig(
             mode = ScheduleMode.valueOf(mode),
-            fixedMinuteOfDay = prefs.getInt("fixedMinuteOfDay", 9 * 60),
-            windowStartMinute = prefs.getInt("windowStartMinute", 9 * 60),
-            windowEndMinute = prefs.getInt("windowEndMinute", 21 * 60),
-            dayOfWeek = prefs.getInt("dayOfWeek", DayOfWeek.SUNDAY.value),
+            fixedMinuteOfDay = prefs.getInt("${p}fixedMinuteOfDay", 9 * 60),
+            windowStartMinute = prefs.getInt("${p}windowStartMinute", 9 * 60),
+            windowEndMinute = prefs.getInt("${p}windowEndMinute", 21 * 60),
+            dayOfWeek = prefs.getInt("${p}dayOfWeek", DayOfWeek.SUNDAY.value),
             customDayMinutes = customDayMinutes
         )
     }
+
+    private fun prefix(key: String): String = if (key.isEmpty()) "" else "${key}_"
 }

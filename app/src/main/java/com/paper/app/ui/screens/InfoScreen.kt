@@ -54,7 +54,24 @@ fun InfoScreen(onClose: () -> Unit) {
             )
             Spacer(Modifier.height(40.dp))
             Text(
-                "Paper prompts you to write, then keeps what you write to yourself — stored only on this device.",
+                "A prompt to write, stored only on this device.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(Modifier.height(64.dp))
+            Text(
+                "Future updates",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(Modifier.height(12.dp))
+            Text(
+                "Encryption — your journal stays unreadable without your password, even with direct file access.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,

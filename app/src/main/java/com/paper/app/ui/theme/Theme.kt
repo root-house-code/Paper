@@ -76,9 +76,9 @@ private val PaperTypography = Typography(
 )
 
 @Composable
-fun PaperTheme(content: @Composable () -> Unit) {
+fun PaperTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = if (isSystemInDarkTheme()) DarkColors else LightColors,
+        colorScheme = if (darkTheme) DarkColors else LightColors,
         typography = PaperTypography,
         content = content
     )

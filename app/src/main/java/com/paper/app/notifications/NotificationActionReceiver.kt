@@ -14,11 +14,13 @@ class NotificationActionReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == ACTION_SNOOZE) {
+            val categoryId = intent.getStringExtra(ReminderScheduler.EXTRA_CATEGORY_ID)
             context.getSystemService<NotificationManager>()
-                ?.cancel(ReminderReceiver.NOTIFICATION_ID)
+                ?.cancel(ReminderScheduler.notificationIdFor(categoryId))
             ReminderScheduler.scheduleAt(
                 context,
-                System.currentTimeMillis() + SNOOZE_MILLIS
+                System.currentTimeMillis() + SNOOZE_MILLIS,
+                categoryId
             )
         }
     }

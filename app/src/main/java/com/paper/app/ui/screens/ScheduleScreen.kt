@@ -56,7 +56,11 @@ private val modeLabels = mapOf(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ScheduleScreen(initial: ScheduleConfig?, onSaved: (ScheduleConfig) -> Unit) {
+fun ScheduleScreen(
+    initial: ScheduleConfig?,
+    categoryLabel: String? = null,
+    onSaved: (ScheduleConfig) -> Unit
+) {
     var mode by remember { mutableStateOf(initial?.mode ?: ScheduleMode.DAILY_FIXED) }
     var fixedMinute by remember { mutableIntStateOf(initial?.fixedMinuteOfDay ?: 9 * 60) }
     var windowStart by remember { mutableIntStateOf(initial?.windowStartMinute ?: 9 * 60) }
@@ -89,6 +93,14 @@ fun ScheduleScreen(initial: ScheduleConfig?, onSaved: (ScheduleConfig) -> Unit) 
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 32.dp, vertical = 48.dp)
     ) {
+        categoryLabel?.let {
+            Text(
+                it.uppercase(Locale.getDefault()),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(4.dp))
+        }
         Text(
             "When would you like to write?",
             style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp),
